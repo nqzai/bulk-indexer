@@ -23,20 +23,27 @@ async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/submit-urls")
-async def submit_urls(file: UploadFile = None, urls_text: str = Form(None)):
+async def submit_urls(request: Request, file: UploadFile = None, urls_text: str = Form(None)):
     urls = []
     
-    if file:
+    form = await request.form()
+    
+    if file and file.filename:
         content = await file.read()
         content = content.decode('utf-8')
         urls = [line.strip() for line in content.splitlines() if line.strip().startswith("http")]
     elif urls_text:
         urls = [line.strip() for line in urls_text.splitlines() if line.strip().startswith("http")]
+    else:
+        # Try getting from form data
+        if "urls_text" in form:
+            urls_text = form["urls_text"]
+            urls = [line.strip() for line in urls_text.splitlines() if line.strip().startswith("http")]
 
     urls = [url for url in urls if url.startswith("http")][:100]
 
     if not urls:
-        return JSONResponse({"error": "No valid URLs found"}, status_code=400)
+        return JSONResponse({"error": "No valid URLs found. Please paste URLs or upload a file."}, status_code=400)
 
     # Generate sitemap
     generate_sitemap(urls)
@@ -47,7 +54,7 @@ async def submit_urls(file: UploadFile = None, urls_text: str = Form(None)):
     return {
         "status": "success",
         "processed": len(urls),
-        "sitemap_url": "/download-sitemap",
+        "message": f"Successfully submitted {len(urls)} URLs to Google",
         "results": results
     }
 

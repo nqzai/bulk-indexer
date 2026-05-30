@@ -25,6 +25,7 @@
             background: #1e2937;
             border: 1px solid #475569;
             color: white;
+            border-radius: 6px;
         }
 
         button {
@@ -34,10 +35,18 @@
             border: none;
             cursor: pointer;
             font-size: 16px;
+            border-radius: 6px;
         }
 
         button:hover {
             background: #2563eb;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e2937;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -45,15 +54,17 @@
 <body>
     <div class="container">
         <h1>🚀 Bulk Google Indexer (100 URLs/batch)</h1>
+
         <form action="/submit-urls" method="post" enctype="multipart/form-data">
             <h3>Paste URLs (one per line)</h3>
-            <textarea name="urls_text" rows="12" placeholder="https://example.com/page1"></textarea>
+            <textarea name="urls_text" rows="10" placeholder="https://example.com/page1"></textarea>
 
             <h3>OR Upload CSV/TXT</h3>
             <input type="file" name="file" accept=".csv,.txt">
 
             <br><button type="submit">Submit to Googlebot</button>
         </form>
+
         <p><small>Uses official Google Indexing API • Max 100 URLs per request</small></p>
     </div>
 </body>
