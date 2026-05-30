@@ -1,16 +1,12 @@
 from fastapi import FastAPI, UploadFile, Form, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
-import pandas as pd
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
-import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-import google.auth
 from google.auth.transport.requests import AuthorizedSession
 
 app = FastAPI(title="Bulk Google Indexer")
@@ -19,7 +15,6 @@ templates = Jinja2Templates(directory="templates")
 os.makedirs("templates", exist_ok=True)
 os.makedirs("uploads", exist_ok=True)
 
-# Load credentials
 SCOPES = ["https://www.googleapis.com/auth/indexing"]
 SERVICE_ACCOUNT_FILE = "service-account.json"
 
@@ -32,20 +27,21 @@ async def submit_urls(file: UploadFile = None, urls_text: str = Form(None)):
     urls = []
     
     if file:
-        df = pd.read_csv(file.file)
-        urls = df.iloc[:, 0].dropna().tolist()
+        content = await file.read()
+        content = content.decode('utf-8')
+        urls = [line.strip() for line in content.splitlines() if line.strip().startswith("http")]
     elif urls_text:
         urls = [line.strip() for line in urls_text.splitlines() if line.strip().startswith("http")]
 
-    urls = [url for url in urls if url.startswith("http")][:100]  # Max 100 per batch
+    urls = [url for url in urls if url.startswith("http")][:100]
 
     if not urls:
         return JSONResponse({"error": "No valid URLs found"}, status_code=400)
 
     # Generate sitemap
-    sitemap_path = generate_sitemap(urls)
+    generate_sitemap(urls)
 
-    # Submit to Google Indexing API
+    # Submit to Google
     results = submit_to_indexing_api(urls)
 
     return {
@@ -66,7 +62,6 @@ def generate_sitemap(urls):
     
     tree = ET.ElementTree(root)
     tree.write("sitemap.xml", encoding="utf-8", xml_declaration=True)
-    return "sitemap.xml"
 
 def submit_to_indexing_api(urls):
     try:
@@ -76,10 +71,7 @@ def submit_to_indexing_api(urls):
         
         results = []
         for url in urls:
-            body = {
-                "url": url,
-                "type": "URL_UPDATED"
-            }
+            body = {"url": url, "type": "URL_UPDATED"}
             response = session.post(
                 "https://indexing.googleapis.com/v3/urlNotifications:publish",
                 json=body
@@ -87,7 +79,7 @@ def submit_to_indexing_api(urls):
             results.append({
                 "url": url,
                 "status": response.status_code,
-                "response": response.text[:200]
+                "response": response.text[:300]
             })
         return results
     except Exception as e:
