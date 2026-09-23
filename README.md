@@ -6,3 +6,4 @@ See which provider supplied the questionable placements.
 Every audited link is grouped by the provider or PR distribution agency that sold it — how many of their placements turned out to be co-hosted spam, and whether that vendor is worth paying again.
 Catch link rot before your client does.
 Re-check every URL whenever you want and the dollar value recalculates around what is still live — a status check costs a fraction of a full audit, with no vendor lookups to pay for.
+[MX Verify](https://mxverify.uk/)
